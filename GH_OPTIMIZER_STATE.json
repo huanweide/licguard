@@ -1,0 +1,73 @@
+{
+  "repo": "huanweide/licguard",
+  "round": 1,
+  "date": "2026-10-15",
+  "survival": {
+    "verdict": "keep",
+    "reason": "同类替代（license-checker / licensed / licensee）均为重量级依赖、需联网或需 npm install，与本家族'零依赖单文件 CLI + 可进 CI 门禁'的定位正面冲突但并不碾压——它输在部署成本而非能力。且该家族门面（family-showcase / track-capped）已把它列入依赖合规层，删掉会留空洞。"
+  },
+  "direction": "single-point-deep-specialization",
+  "directionReason": "不改赛道。扫描器骨架与分类器（LGPL 先于 GPL 的顺序、SPDX OR/AND 取最严格）本来就是对的，问题全在'扫描基座'这一层。深挖这一层，让输出从'看起来干净'变成'真的可信'。",
+  "keyDefects": [
+    {
+      "id": "P0-false-negative",
+      "title": "只扫 node_modules，干净 clone 时扫 0 个包却退出 0",
+      "evidence": "fixture:根 package.json 声明 gpl-lib@^1.0.0 + mystery@^2.0.0，node_modules 仅装 foo(MIT)。旧实现输出 scanned:1（只有 foo），汇总全 0，退出码 0。gpl-lib 完全不可见。",
+      "impact": "合规门禁形同虚设。CI 干净 clone 是最常见的接入方式，恰恰是最容易假绿的场景。",
+      "fix": "新增 buildBasis/readDeclared/isLocalRef/isInstalledAt：读根 package.json 四个依赖字段，声明未落地者标记 notInstalled 并按 unknown 计入；新增退出码 3 表示扫描基不完整；--allow-missing 提供显式逃生口；JSON 新增 installed/notInstalled/basisComplete 字段。"
+    },
+    {
+      "id": "P1-silent-empty",
+      "title": "空目录/坏 package.json 静默返回 0 个包",
+      "evidence": "既无 package.json 也无 node_modules 时 findPackages 返回 []，输出'依赖总数 0'，退出 0。根 package.json 语法错误时同样静默。",
+      "impact": "路径写错、CI 步骤漏了 checkout，都会得到一个绿色的假通过。",
+      "fix": "入口先校验目标目录存在、根 manifest 可解析；两者皆无时报'无从扫描'退出 2；manifest 损坏时报错退出 2。findPackages 内readJson 失败改为跳过而非抛出。"
+    },
+    {
+      "id": "P1-readme-lying",
+      "title": "README 的「CI 门禁用法」段在吹牛",
+      "evidence": "原文：'它会输出健康分与严重度'。实际输出里根本没有健康分这个概念（那是同家族 doctors/enghealth 的词），且--max / --fail-on 的真实行为未说明。",
+      "impact": "误导使用者以为有额外保护。",
+      "fix": "删除该段，改为真实的退出码表 + 退出码 3 的成因与修法 + basisComplete 字段说明 + CI 示例补上 npm ci 这条前置。"
+    },
+    {
+      "id": "P2-missing-license-file",
+      "title": "README 声称 MIT 但仓库无 LICENSE 文件",
+      "impact": "license 字段合规性存疑。",
+      "fix": "从doctors 统一取用 MIT LICENSE。"
+    }
+  ],
+  "ci": {
+    "platforms": ["ubuntu-latest", "windows-latest"],
+    "steps": ["单元测试", "端到端冒烟", "自扫 --fail-on danger"],
+    "note": "触发分支 master + main（远端默认分支为 master）"
+  },
+  "tests": {
+    "unit": "14/14（原 6 项全部保留 + 8 项新增）",
+    "smoke": "26/26 断言"
+  },
+  "mutationTests": [
+    {
+      "name": "missing 恒为空（还原旧行为）",
+      "result": "unit fail 2, smoke fail 6 — 拦下"
+    },
+    {
+      "name": "退出码 3 改回 0",
+      "result": "unit pass（此变异只影响 CLI 层，单测不覆盖退出码属已知盲区）, smoke fail 2 — 冒烟拦下"
+    },
+    {
+      "name": "isLocalRef 豁免失效",
+      "result": "全崩 — 拦下（但手法不干净，见 selfMistakes）"
+    }
+  ],
+  "selfMistakes": [
+    "变异3 的 python 替换把正则写成了非法语法，导致 require 直接抛错、测试整体崩溃而非定点失败。拦下结论有效，但这次变异只证明了'代码坏了会红'，没真正证明'豁免逻辑被测到了'。下次改isLocalRef 内部实现应改成合法但语义相反的写法（如返回 !/^.../.test(s)）。",
+    "退出码 3 这类纯 CLI 行为没有单测覆盖，只能靠冒烟脚本兜。单测层与进程层之间的空隙应记为家族通用注意点：CLI 工具的退出码契约必须有 spawn 级测试。"
+  ],
+  "pr": {
+    "number": 1,
+    "url": "https://github.com/huanweide/licguard/pull/1",
+    "status": "squash-merged",
+    "rollback": "单 commit，git revert 即可整体撤销"
+  }
+}

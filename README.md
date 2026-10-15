@@ -1,6 +1,6 @@
 # licguard
 
-零依赖 Node CLI：扫描 `node_modules` 依赖许可证，识别 **GPL/AGPL 强 copyleft** 与未知许可，可进 CI 做合规门禁。
+零依赖 Node CLI：扫描依赖许可证，识别 **GPL/AGPL 强copyleft** 与未知许可，可进 CI 做合规门禁。
 
 ## 为什么需要它
 
@@ -17,12 +17,35 @@ node index.js .          # 零依赖：无需 npm install 任何东西
 ## 用法
 
 ```bash
-node index.js .                        # 扫描当前项目依赖，彩色表格
+node index.js .                     # 扫描当前项目依赖，彩色表格
 node index.js . --json                # JSON 输出，给 CI 解析
 node index.js . --fail-on strong      # 发现任何 GPL/AGPL 直接 exit 2（CI 门禁）
 node index.js . --max 0               # 零容忍任何高危 / 未知许可
 node index.js . --no-color            # 关颜色，管道友好
+node index.js . --allow-missing       # 允许「声明了但未安装」的依赖存在
 ```
+
+## 退出码
+
+| 码 | 含义 |
+|---|---|
+| 0 | 扫描基完整，且未命中门禁 |
+| 2 | 命中门禁 / 参数错误 / 目标目录不可用 |
+| 3 | **扫描基不完整**：根 `package.json` 声明了依赖，但没安装，无法给出可信结论 |
+
+## ⚠️ 为什么会有退出码 3
+
+老版本只扫 `node_modules`。在 CI 的干净 clone 里，`node_modules` 根本不存在，于是它扫到 **0 个包**、汇总全是 0、**退出码 0** —— 一句响亮的「合规通过」，实际上什么都没检查。
+
+现在 `licguard` 会同时读根 `package.json` 的四个依赖字段：
+
+```
+dependencies / devDependencies / optionalDependencies / peerDependencies
+```
+
+声明了却没落地的包会被列为 `未安装`，按 `unknown` 计入汇总，并让进程以退出码 3 收场。修法很简单：**先 `npm ci`**，或显式加 `--allow-missing` 表示你接受这个盲区。
+
+`workspace:` / `file:` / `link:` / `git+` / `github:` 这类非 registry 来源不算「未安装」。
 
 ## 许可证类别
 
@@ -30,14 +53,31 @@ node index.js . --no-color            # 关颜色，管道友好
 |---|---|---|
 | 宽松 permissive | 安全 | MIT / ISC / Apache / BSD |
 | 弱传染 weak | 警示 | LGPL / MPL / EPL |
-| 强传染 strong | 高危（可能要求整体开源） | GPL / AGPL |
-| 未知 unknown | 需人工确认 | 无 license / UNLICENSED / 私有 |
+| 强传染 strong | 高危（可能要求整体开源） | GPL / AGPL / EUPL |
+| 未知 unknown | 需人工确认 | 无 license / UNLICENSED / 私有 / 声明未安装 |
 
 SPDX 表达式（`MIT OR Apache-2.0`、`(MIT) AND GPL-3.0`）取**最严格** token 分类，合规保守。
+LGPL 必须先于 GPL 命中（`LGPL-3.0` 是弱传染，不是强传染），分类器里这条顺序不能颠倒。
+
+## JSON 输出
+
+```json
+{
+  "scanned": 2,
+  "installed": 1,
+  "notInstalled": 1,
+  "basisComplete": false,
+  "summary": { "permissive": 1, "weak": 0, "strong": 0, "unknown": 1 },
+  "packages": [ ... ]
+}
+```
+
+`basisComplete` 就是给CI 判断「这次结论可不可信」的开关。
 
 ## CI 集成
 
 ```yaml
+- run: npm ci                    # 关键：先把依赖装出来
 - run: node licguard/index.js . --fail-on strong
 ```
 
@@ -45,24 +85,21 @@ SPDX 表达式（`MIT OR Apache-2.0`、`(MIT) AND GPL-3.0`）取**最严格** to
 
 `idiot-index` 查依赖「胖不胖」（冗余 / 过度工程），`licguard` 查依赖「干不干净」（法律传染风险）——合称**依赖体检双子**。
 
+## 开发
+
+```bash
+node --test test.js         # 单元测试
+node scripts/smoke-cli.js   # 端到端冒烟（真实子进程 + 退出码契约）
+```
+
 ## License
 
-MIT
-
----
+MIT，详见 [LICENSE](LICENSE)。
 
 ## 作者
 
-由 **ReTr · 樊斯瑞** 维护 · [GitHub 主页](https://github.com/huanweide)
-
-## CI 门禁用法
-
-开箱即可接入 CI：在流水线中运行本工具，它会输出健康分与严重度；若存在不达标项会以非 0 退出码结束，从而拦下问题提交（具体参数见上方「快速开始」）。
+由 **ReTri · 樊斯瑞** 维护 · [GitHub 主页](https://github.com/huanweide)
 
 ## 赞助支持
 
-如果这个项目帮到了你，欢迎 [点 Star](https://github.com/huanweide/licguard) 支持；也可微信扫码自愿赞助（收款码见 `sponsor/wechat-qr.png`，作者本人带 Tri 水印的码，纯静态图片、不含任何密钥）。
-
-## 许可证
-
-详见 [LICENSE](LICENSE)。
+如果这个项目帮到了你，欢迎 [点 Star](https://github.com/huanweide/licguard) 支持；也可微信扫码自愿赞助（收款码见 `sponsor/wechat-qr.png`，纯静态图片、不含任何密钥）。
