@@ -1,0 +1,28 @@
+name: verify
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: 单元测试
+        run: node --test test.js
+
+      - name: 端到端冒烟
+        run: node scripts/smoke-cli.js
+
+      - name: 自扫（零依赖项目应无高危）
+        run: node index.js . --fail-on danger
