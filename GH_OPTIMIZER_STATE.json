@@ -1,6 +1,6 @@
 {
   "repo": "huanweide/licguard",
-  "round": 1,
+  "round": 2,
   "date": "2026-10-15",
   "survival": {
     "verdict": "keep",
@@ -38,8 +38,15 @@
     }
   ],
   "ci": {
-    "platforms": ["ubuntu-latest", "windows-latest"],
-    "steps": ["单元测试", "端到端冒烟", "自扫 --fail-on danger"],
+    "platforms": [
+      "ubuntu-latest",
+      "windows-latest"
+    ],
+    "steps": [
+      "单元测试",
+      "端到端冒烟",
+      "自扫 --fail-on danger"
+    ],
     "note": "触发分支 master + main（远端默认分支为 master）"
   },
   "tests": {
@@ -69,5 +76,10 @@
     "url": "https://github.com/huanweide/licguard/pull/1",
     "status": "squash-merged",
     "rollback": "单 commit，git revert 即可整体撤销"
-  }
+  },
+  "lastOptimized": "2026-10-25",
+  "status": "optimized",
+  "improvements": [
+    "S1/S2/L11 自动修复(引擎)"
+  ]
 }
