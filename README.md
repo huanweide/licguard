@@ -1,3 +1,11 @@
+<!-- badges -->
+[![License](https://img.shields.io/github/license/huanweide/licguard)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/huanweide/licguard)](https://github.com/huanweide/licguard/stargazers)
+[![Engineering Health Family](https://img.shields.io/badge/Engineering%20Health%20Family-18%20axes-22c55e)](https://github.com/huanweide/family-showcase)
+<!-- /badges -->
+
+**🔧 Part of the [Engineering Health Family](https://github.com/huanweide/family-showcase)** (18 zero-dependency checkup axes). Standalone tool — see [doctors](https://github.com/huanweide/doctors) (monorepo) and [enghealth](https://github.com/huanweide/enghealth) (unified runner).
+
 # licguard
 
 零依赖 Node CLI：扫描依赖许可证，识别 **GPL/AGPL 强copyleft** 与未知许可，可进 CI 做合规门禁。
