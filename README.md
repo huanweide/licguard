@@ -13,6 +13,8 @@
 
 **🔧 Part of the [Engineering Health Family](https://github.com/huanweide/family-showcase)** (18 zero-dependency checkup axes). Standalone tool — see [doctors](https://github.com/huanweide/doctors) (monorepo) and [enghealth](https://github.com/huanweide/enghealth) (unified runner).
 
+> English: 暂未提供
+
 # licguard
 
 零依赖 Node CLI：扫描依赖许可证，识别 **GPL/AGPL 强copyleft** 与未知许可，可进 CI 做合规门禁。
@@ -124,5 +126,5 @@ MIT，详见 [LICENSE](LICENSE)。
 
 ## 作者
 
-由 **ReTri · huanweide** 维护 · [GitHub 主页](https://github.com/huanweide)
+由 **huanweide** 维护 · [GitHub 主页](https://github.com/huanweide)
 
